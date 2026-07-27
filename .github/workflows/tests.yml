@@ -15,8 +15,9 @@ jobs:
           - os: ubuntu-latest
             container: ghcr.io/homebrew/brew:main
     runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
-    options: ${{ matrix.container != '' && '--privileged' }}
+    container:
+      image: ${{ matrix.container }}
+      options: ${{ matrix.container != '' && '--privileged' || '' }}
     permissions:
       actions: read
       checks: read
