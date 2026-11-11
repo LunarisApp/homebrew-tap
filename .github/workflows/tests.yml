@@ -37,6 +37,12 @@ jobs:
           key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
           restore-keys: ${{ matrix.os }}-rubygems-
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
       - run: brew test-bot --only-cleanup-before
 
       - run: brew test-bot --only-setup
@@ -45,6 +51,13 @@ jobs:
 
       - run: brew test-bot --only-formulae
         if: github.event_name == 'pull_request'
+
+      - name: Validate desktop cask
+        if: runner.os == 'macOS'
+        run: |
+          brew style Casks/lunaris.rb
+          brew audit --cask LunarisApp/tap/lunaris
+          brew fetch --cask LunarisApp/tap/lunaris
 
       - name: Upload bottles as artifact
         if: always() && github.event_name == 'pull_request'
