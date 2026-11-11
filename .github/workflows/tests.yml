@@ -41,18 +41,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
-      - run: brew test-bot --only-cleanup-before
+      - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: brew test-bot --only-cleanup-before
 
-      - run: brew test-bot --only-setup
+      - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: brew test-bot --only-setup
 
-      - run: brew test-bot --only-tap-syntax
+      - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: brew test-bot --only-tap-syntax
 
-      - run: brew test-bot --only-formulae
+      - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: brew test-bot --only-formulae
         if: github.event_name == 'pull_request'
 
       - name: Validate desktop cask
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         if: runner.os == 'macOS'
         run: |
           brew style Casks/lunaris.rb
@@ -64,4 +70,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: bottles_${{ matrix.os }}
-          path: "*.bottle.*"
+          path: "${{ steps.set-up-homebrew.outputs.repository-path }}/*.bottle.*"
