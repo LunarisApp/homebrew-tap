@@ -1,0 +1,66 @@
+name: Update Lunaris release
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published release tag (blank selects latest stable)"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-lunaris-release
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check automation token
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo 'Set HOMEBREW_TAP_TOKEN with contents and pull request write access to this tap.' >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify release and update definitions
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python3 scripts/update-release.py ${RELEASE_TAG:+"$RELEASE_TAG"}
+      - name: Open update pull request
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          git add Formula/lunaris.rb Casks/lunaris.rb
+          if git diff --cached --quiet; then
+            echo 'Tap already matches the release.'
+            exit 0
+          fi
+          branch=automation/lunaris-release
+          git fetch origin "$branch" || true
+          expected=$(git rev-parse --verify "refs/remotes/origin/$branch" 2>/dev/null || true)
+          git checkout -b "$branch"
+          git config user.name 'lunaris-release[bot]'
+          git config user.email 'lunaris-release[bot]@users.noreply.github.com'
+          git commit -m 'chore: update Lunaris release'
+          git push --force-with-lease="refs/heads/$branch:$expected" origin "$branch"
+          existing=$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -z "$existing" ]; then
+            gh pr create --head "$branch" --base main \
+              --title 'chore: update Lunaris release' \
+              --body 'Updates CLI and desktop from a published Lunaris GitHub release. Both downloads were verified against the release SHA256SUMS. Review the Homebrew CI checks before merging.'
+          fi
