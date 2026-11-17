@@ -44,6 +44,13 @@ jobs:
       - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
+      - name: Prepare Intel Homebrew libexec directory
+        if: matrix.os == 'macos-15-intel'
+        run: |
+          # test-bot cleanup creates this directory under the root-owned /usr/local.
+          sudo mkdir -p /usr/local/libexec
+          sudo chown "$(id -un):$(id -gn)" /usr/local/libexec
+
       - working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
         run: brew test-bot --only-cleanup-before
 
