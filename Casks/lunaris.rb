@@ -1,6 +1,6 @@
 cask "lunaris" do
-  version "0.0.6"
-  sha256 "abe20f8f7898425e13109463c45ee7a6823abb8d95382652ceb7c829534d4f62"
+  version "0.0.7"
+  sha256 "63efaedb258107e78d2d4cbc499c404bac4a241e59fcf749dac9412f61c91eff"
 
   url "https://github.com/LunarisApp/lunaris/releases/download/v#{version}/" \
       "Lunaris-desktop-#{version}-universal.dmg"
